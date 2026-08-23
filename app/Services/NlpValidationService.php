@@ -27,7 +27,7 @@ class NlpValidationService
     public function predict(string $text): array
     {
         try {
-            $response = Http::timeout($this->timeout)->post($this->microserviceUrl, [
+            $response = Http::connectTimeout(1)->timeout($this->timeout)->post($this->microserviceUrl, [
                 'text' => $text,
             ]);
 

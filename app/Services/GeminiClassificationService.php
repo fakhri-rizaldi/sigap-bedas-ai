@@ -127,7 +127,8 @@ class GeminiClassificationService
             $userPrompt = $this->buildSandboxedUserPrompt($sanitizedText);
             $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
 
-            $response = Http::timeout($this->timeout)
+            $response = Http::connectTimeout(3)
+                ->timeout($this->timeout)
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->post($url, [
                     // System Instruction Terpisah (Immutable oleh User Prompt)

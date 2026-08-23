@@ -73,7 +73,8 @@ class GeocodeController extends Controller
 
         $result = Cache::remember($cacheKey, 2592000, function () use ($lat, $lng) {
             try {
-                $response = Http::timeout(6)
+                $response = Http::connectTimeout(2)
+                    ->timeout(4)
                     ->withHeaders([
                         'User-Agent' => 'SIGAP-KabBandung/1.0 (layanan.aduan@bandungkab.go.id)',
                         'Accept-Language' => 'id-ID,id;q=0.9,en;q=0.8',
