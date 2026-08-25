@@ -132,10 +132,6 @@ const formatDate = (dateStr?: string) => {
     <section class="bg-gradient-to-br from-[#0A3D62] via-[#08304E] to-[#052136] text-white py-10 sm:py-14 border-b border-blue-900 shadow-md">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-4">
         
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs text-blue-200">
-          <ShieldCheck class="w-3.5 h-3.5 text-amber-400" />
-          <span>Portal Pelacakan Terpadu Warga Kabupaten Bandung</span>
-        </div>
 
         <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
           Lacak Progres & Tindak Lanjut Aduan

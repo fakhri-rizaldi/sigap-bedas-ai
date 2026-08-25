@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { 
-  ShieldAlert, 
   FileText, 
   LayoutDashboard, 
   ChevronDown, 
@@ -73,15 +72,14 @@ const instansiList = [
       
       <!-- Brand / Logo -->
       <Link href="/lapor" class="flex items-center gap-3 group">
-        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition shadow-inner">
-          <ShieldAlert class="w-6 h-6 text-amber-300 group-hover:scale-105 transition-transform" />
+        <div class="w-10 h-10 rounded-xl overflow-hidden border border-white/20 shrink-0">
+          <img src="/logo-sigap.jpeg" alt="Logo SIGAP" class="w-full h-full object-cover" />
         </div>
         <div>
-          <div class="font-extrabold text-lg leading-tight tracking-tight flex items-center gap-2">
+          <div class="font-extrabold text-lg leading-tight tracking-tight">
             <span>SIGAP</span>
-            <span class="text-[10px] bg-amber-400 font-extrabold px-1.5 py-0.5 rounded text-slate-950 uppercase tracking-wider shadow-xs">Kab. Bandung</span>
           </div>
-          <p class="text-xs text-blue-100/90 font-normal">Layanan Pengaduan Warga</p>
+          <p class="text-xs text-blue-100/90 font-normal">Sistem Informasi &amp; Gerak Aduan Publik</p>
         </div>
       </Link>
 

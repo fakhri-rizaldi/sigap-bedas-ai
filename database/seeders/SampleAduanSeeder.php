@@ -102,6 +102,9 @@ class SampleAduanSeeder extends Seeder
         ];
 
         foreach ($samples as $item) {
+            if (empty($item['kode_tiket'])) {
+                $item['kode_tiket'] = Aduan::generateKodeTiket();
+            }
             Aduan::create($item);
         }
     }
