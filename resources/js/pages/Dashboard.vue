@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { 
-  ShieldAlert, 
   Search, 
   ListFilter, 
   Columns3, 
@@ -296,8 +295,8 @@ const handleLogout = () => {
       <!-- Brand Logo -->
       <div class="flex items-center gap-3">
         <Link href="/dashboard" class="flex items-center gap-2.5 group">
-          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition">
-            <ShieldAlert class="w-4 h-4 text-amber-300" />
+          <div class="w-8 h-8 rounded-lg overflow-hidden border border-white/20 shrink-0 group-hover:ring-2 group-hover:ring-amber-400/50 transition">
+            <img src="/logo-sigap.jpeg" alt="Logo SIGAP" class="w-full h-full object-cover" />
           </div>
           <div>
             <div class="font-extrabold text-sm leading-tight flex items-center gap-1.5">

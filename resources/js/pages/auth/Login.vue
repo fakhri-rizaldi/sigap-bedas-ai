@@ -76,8 +76,8 @@ const submit = () => {
 
           <!-- Logo & Title -->
           <div class="text-center space-y-2">
-            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-amber-300 shadow-inner">
-              <ShieldAlert class="w-7 h-7" />
+            <div class="w-12 h-12 rounded-2xl overflow-hidden border border-white/20 mx-auto shadow-inner">
+              <img src="/logo-sigap.jpeg" alt="Logo SIGAP" class="w-full h-full object-cover" />
             </div>
             <h1 class="text-xl sm:text-2xl font-extrabold font-heading text-white tracking-tight">
               Portal Staf & OPD SIGAP
