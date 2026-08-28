@@ -20,13 +20,28 @@ import {
   ExternalLink,
   Send,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Edit3,
+  History,
+  ArrowRight
 } from '@lucide/vue';
 import TicketMiniMap from './TicketMiniMap.vue';
 import type { AduanItem } from './TicketCard.vue';
 
+interface CategoryItem {
+  id: number;
+  kategori: string;
+  dinas_id: number;
+  dinas?: {
+    id: number;
+    nama_dinas: string;
+    kode_dinas: string;
+  } | null;
+}
+
 const props = defineProps<{
   aduan: AduanItem | null;
+  categoriesList?: CategoryItem[];
 }>();
 
 const emit = defineEmits<{
@@ -41,6 +56,20 @@ const isSubmitting = ref<boolean>(false);
 const showImageModal = ref<boolean>(false);
 const saveSuccessMessage = ref<string>('');
 const saveErrorMessage = ref<string>('');
+
+// State Koreksi Kategori
+const isCorrectionModalOpen = ref<boolean>(false);
+const selectedNewCategory = ref<string>('');
+const correctionReason = ref<string>('');
+const isCorrecting = ref<boolean>(false);
+const correctionErrorMessage = ref<string>('');
+
+// Auto-detect Dinas Tujuan saat memilih kategori baru
+const targetDinasForCorrection = computed(() => {
+  if (!selectedNewCategory.value || !props.categoriesList) return null;
+  const match = props.categoriesList.find(c => c.kategori === selectedNewCategory.value);
+  return match?.dinas?.nama_dinas || null;
+});
 
 // Sinkronkan state saat aduan berganti
 watch(
@@ -82,8 +111,44 @@ const handleUpdateStatus = async () => {
     setTimeout(() => {
       saveErrorMessage.value = '';
     }, 6000);
-  } finally {
+    } finally {
     isSubmitting.value = false;
+  }
+};
+
+const openCorrectionModal = () => {
+  if (!props.aduan) return;
+  selectedNewCategory.value = props.aduan.kategori;
+  correctionReason.value = '';
+  correctionErrorMessage.value = '';
+  isCorrectionModalOpen.value = true;
+};
+
+const handleKoreksiKategori = async () => {
+  if (!props.aduan || !selectedNewCategory.value) return;
+
+  isCorrecting.value = true;
+  correctionErrorMessage.value = '';
+
+  try {
+    const response = await axios.patch(`/dashboard/aduan/${props.aduan.id}/koreksi`, {
+      kategori: selectedNewCategory.value,
+      alasan: correctionReason.value || undefined,
+    });
+
+    if (response.data?.status === 'success' && response.data?.data) {
+      saveSuccessMessage.value = response.data.message;
+      emit('updated', response.data.data);
+      isCorrectionModalOpen.value = false;
+      setTimeout(() => {
+        saveSuccessMessage.value = '';
+      }, 5000);
+    }
+  } catch (error: any) {
+    console.error('Gagal mengoreksi kategori:', error);
+    correctionErrorMessage.value = error.response?.data?.message || 'Gagal menyimpan koreksi kategori.';
+  } finally {
+    isCorrecting.value = false;
   }
 };
 
@@ -209,6 +274,52 @@ const urgencyPill = computed(() => {
         <p v-if="aduan.alasan_urgensi" class="text-[11px] text-slate-600 bg-white/80 p-2.5 rounded-xl border border-blue-100/60">
           <strong class="text-slate-800">Alasan Penilaian:</strong> {{ aduan.alasan_urgensi }}
         </p>
+
+        <!-- Tombol Buka Modal Koreksi Kategori -->
+        <div class="pt-2 border-t border-blue-100/60 flex items-center justify-between">
+          <span class="text-[11px] text-slate-500 font-medium">Kategori tidak sesuai?</span>
+          <button
+            type="button"
+            @click="openCorrectionModal"
+            class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-50 text-amber-900 border border-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+          >
+            <Edit3 class="w-3.5 h-3.5 text-amber-600" />
+            <span>Koreksi Kategori</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2B. Riwayat Koreksi Manual (Audit Trail / Active Learning) -->
+      <div v-if="aduan.koreksi_histori && aduan.koreksi_histori.length > 0" class="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70 space-y-2.5">
+        <div class="flex items-center gap-2 text-xs font-bold text-amber-950">
+          <History class="w-4 h-4 text-amber-600" />
+          <span>Riwayat Koreksi Kategori ({{ aduan.koreksi_histori.length }}x)</span>
+        </div>
+        <div class="space-y-2">
+          <div 
+            v-for="k in aduan.koreksi_histori" 
+            :key="k.id"
+            class="p-2.5 rounded-xl bg-white border border-amber-100 text-xs space-y-1"
+          >
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+              <div class="flex items-center gap-1.5">
+                <span class="line-through text-slate-400">{{ k.kategori_lama }}</span>
+                <ArrowRight class="w-3 h-3 text-amber-600" />
+                <span class="font-extrabold text-[#0A3D62]">{{ k.kategori_baru }}</span>
+              </div>
+              <span class="text-[10px] text-slate-400 font-mono">
+                {{ new Date(k.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }}
+              </span>
+            </div>
+            <p v-if="k.alasan_koreksi" class="text-[11px] text-slate-600 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+              <strong class="text-slate-700">Alasan:</strong> {{ k.alasan_koreksi }}
+            </p>
+            <div class="text-[10px] text-slate-400 flex items-center justify-between pt-0.5">
+              <span>Oleh: {{ k.user?.name || 'Staf Dinas' }}</span>
+              <span v-if="k.dinas_baru">Reroute: {{ k.dinas_baru.nama_dinas }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 3. Foto Bukti Lampiran -->
@@ -377,6 +488,116 @@ const urgencyPill = computed(() => {
         </button>
       </div>
 
+    </div>
+
+    <!-- Modal Koreksi Kategori -->
+    <div
+      v-if="isCorrectionModalOpen"
+      class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+      @click.self="isCorrectionModalOpen = false"
+    >
+      <div class="relative w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+        
+        <!-- Header Modal -->
+        <div class="px-6 py-4 bg-gradient-to-r from-[#0A3D62] to-[#08304E] text-white flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <Edit3 class="w-4 h-4 text-amber-400" />
+            <h3 class="font-extrabold text-sm tracking-tight">Koreksi Kategori Tiket</h3>
+          </div>
+          <button
+            type="button"
+            @click="isCorrectionModalOpen = false"
+            class="p-1 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <!-- Body Form Modal -->
+        <div class="p-6 space-y-4 text-xs">
+          <div>
+            <span class="text-[11px] text-slate-400 font-semibold uppercase block mb-1">Tiket Terpilih</span>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-mono font-bold text-slate-800">
+              #{{ aduan.kode_tiket }} - <span class="font-sans font-semibold text-slate-600 truncate">{{ aduan.kategori }}</span>
+            </div>
+          </div>
+
+          <!-- Pilihan Kategori Baru -->
+          <div class="space-y-1.5">
+            <label for="newCategory" class="block text-xs font-bold text-slate-700">
+              Pilih Kategori Baru yang Sesuai:
+            </label>
+            <select
+              id="newCategory"
+              v-model="selectedNewCategory"
+              class="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900 focus:outline-hidden focus:border-[#0A3D62] focus:ring-1 focus:ring-[#0A3D62] transition cursor-pointer"
+            >
+              <option v-for="c in categoriesList || []" :key="c.id" :value="c.kategori">
+                {{ c.kategori }} ({{ c.dinas?.kode_dinas || 'Dinas Terkait' }})
+              </option>
+              <!-- Fallback Options jika categoriesList kosong -->
+              <option value="Jalan Rusak">Jalan Rusak (DPUTR)</option>
+              <option value="Sampah/Banjir">Sampah/Banjir (DLH)</option>
+              <option value="Bansos">Bansos (DINSOS)</option>
+              <option value="Keamanan/Ketertiban">Keamanan/Ketertiban (Satpol PP)</option>
+            </select>
+          </div>
+
+          <!-- Info Rerouting Dinas Otomatis -->
+          <div v-if="targetDinasForCorrection" class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 space-y-1">
+            <div class="flex items-center gap-1.5 font-bold text-[11px]">
+              <Building2 class="w-3.5 h-3.5 text-blue-700" />
+              <span>Otomatis Dialihkan (Rerouted) ke:</span>
+            </div>
+            <p class="font-extrabold text-xs text-[#0A3D62] pl-5">{{ targetDinasForCorrection }}</p>
+          </div>
+
+          <!-- Input Alasan Koreksi -->
+          <div class="space-y-1.5">
+            <label for="correctionReason" class="block text-xs font-bold text-slate-700">
+              Alasan Koreksi (Audit Trail):
+            </label>
+            <textarea
+              id="correctionReason"
+              v-model="correctionReason"
+              rows="2"
+              placeholder="Contoh: Aduan ini fokus pada gorong-gorong tersumbat, bukan jalan rusak..."
+              class="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#0A3D62] focus:ring-1 focus:ring-[#0A3D62] transition"
+            ></textarea>
+          </div>
+
+          <!-- Error Alert -->
+          <div
+            v-if="correctionErrorMessage"
+            class="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 font-semibold flex items-center gap-2"
+          >
+            <AlertCircle class="w-4 h-4 text-red-600 shrink-0" />
+            <span>{{ correctionErrorMessage }}</span>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            @click="isCorrectionModalOpen = false"
+            class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="handleKoreksiKategori"
+            :disabled="isCorrecting || selectedNewCategory === aduan.kategori"
+            class="px-4 py-2 rounded-xl text-xs font-extrabold bg-[#0A3D62] hover:bg-[#08304E] text-white shadow-md transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+          >
+            <Loader2 v-if="isCorrecting" class="w-3.5 h-3.5 animate-spin" />
+            <Edit3 v-else class="w-3.5 h-3.5 text-amber-300" />
+            <span>{{ isCorrecting ? 'Menyimpan...' : 'Simpan Koreksi' }}</span>
+          </button>
+        </div>
+
+      </div>
     </div>
 
     <!-- Image Lightbox Modal -->

@@ -19,7 +19,9 @@ import {
   RotateCcw, 
   Home,
   X,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3,
+  Settings2
 } from '@lucide/vue';
 import TicketCard, { type AduanItem } from '@/components/Dashboard/TicketCard.vue';
 import TicketInspector from '@/components/Dashboard/TicketInspector.vue';
@@ -47,6 +49,16 @@ interface Props {
     id: number;
     nama_dinas: string;
     kode_dinas: string;
+  }>;
+  categoriesList?: Array<{
+    id: number;
+    kategori: string;
+    dinas_id: number;
+    dinas?: {
+      id: number;
+      nama_dinas: string;
+      kode_dinas: string;
+    } | null;
   }>;
   kecamatanList: string[];
   filters: {
@@ -322,7 +334,25 @@ const handleLogout = () => {
       </div>
 
       <!-- Right Action Bar -->
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2">
+        <Link
+          href="/admin/statistik"
+          class="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition"
+          title="Dashboard Statistik Agregat"
+        >
+          <BarChart3 class="w-3.5 h-3.5 text-amber-300" />
+          <span>Statistik</span>
+        </Link>
+
+        <Link
+          href="/admin/kategori-mapping"
+          class="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition"
+          title="Master Mapping Kategori ke Dinas"
+        >
+          <Settings2 class="w-3.5 h-3.5 text-blue-200" />
+          <span>Mapping Dinas</span>
+        </Link>
+
         <Link
           href="/lapor"
           class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition"
@@ -616,6 +646,7 @@ const handleLogout = () => {
       >
         <TicketInspector
           :aduan="selectedTicket"
+          :categories-list="categoriesList"
           @close="isMobileInspectorOpen = false"
           @updated="handleTicketUpdated"
         />

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Events\AduanStatusUpdated;
 use App\Models\Aduan;
 use App\Models\Dinas;
+use App\Models\KategoriDinasMapping;
+use App\Models\KoreksiKategori;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,8 +32,8 @@ class DashboardController extends Controller
             'Paseh', 'Pasirjambu', 'Rancabali', 'Rancaekek', 'Solokanjeruk', 'Soreang'
         ];
 
-        // Query Dasar
-        $query = Aduan::with('dinas')->latest();
+        // Query Dasar (Eager load dinas & riwayat koreksi)
+        $query = Aduan::with(['dinas', 'koreksiHistori'])->latest();
 
         // Jika user terikat ke dinas tertentu dan bukan super-admin, prioritaskan dinasnya
         if ($user && $user->dinas_id) {
@@ -112,15 +114,69 @@ class DashboardController extends Controller
         });
 
         $dinasList = Dinas::orderBy('nama_dinas')->get();
+        $categoriesList = KategoriDinasMapping::with('dinas:id,nama_dinas,kode_dinas')->get();
 
         return Inertia::render('Dashboard', [
             'aduans' => $aduans,
             'stats' => $stats,
             'dinasList' => $dinasList,
+            'categoriesList' => $categoriesList,
             'kecamatanList' => $kecamatanList,
-            'filters' => $request->only(['status', 'urgensi', 'kategori', 'dinas_id', 'kecamatan', 'search', 'sort']),
+            'filters' => $request->only(['status', 'urgensi', 'kategori', 'dinas_id', 'kecamatan', 'search', 'sort', 'perlu_review']),
             'authDinas' => $user && $user->dinas ? $user->dinas : null,
         ]);
+    }
+
+    /**
+     * Koreksi Manual Kategori Tiket oleh Staf/Admin (Active Learning & Audit Trail).
+     */
+    public function koreksiKategori(Request $request, Aduan $aduan): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'kategori' => ['required', 'string', 'max:100'],
+            'alasan' => ['nullable', 'string', 'max:500'],
+        ], [
+            'kategori.required' => 'Pilih kategori baru yang tepat.',
+        ]);
+
+        $kategoriLama = $aduan->kategori;
+        $kategoriBaru = $validated['kategori'];
+        $dinasLamaId = $aduan->dinas_id;
+
+        // Reroute otomatis dinas sesuai mapping kategori baru
+        $mapping = KategoriDinasMapping::where('kategori', $kategoriBaru)->first();
+        $dinasBaruId = $mapping ? $mapping->dinas_id : $dinasLamaId;
+
+        // Simpan riwayat koreksi untuk active learning & audit
+        KoreksiKategori::create([
+            'aduan_id' => $aduan->id,
+            'user_id' => $request->user()?->id,
+            'kategori_lama' => $kategoriLama,
+            'kategori_baru' => $kategoriBaru,
+            'dinas_lama_id' => $dinasLamaId,
+            'dinas_baru_id' => $dinasBaruId,
+            'alasan_koreksi' => $validated['alasan'] ?? 'Koreksi manual kategori oleh staf dinas.',
+        ]);
+
+        // Update aduan: perbarui kategori, dinas tujuan, dan clear flag perlu_review
+        $aduan->update([
+            'kategori' => $kategoriBaru,
+            'dinas_id' => $dinasBaruId,
+            'perlu_review' => false,
+        ]);
+
+        // Invalidate Cache Statistik KPI
+        \Illuminate\Support\Facades\Cache::forget('dashboard_stats_kpi');
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Kategori tiket #{$aduan->kode_tiket} berhasil dikoreksi menjadi '{$kategoriBaru}'.",
+                'data' => $aduan->fresh()->load(['dinas', 'koreksiHistori']),
+            ]);
+        }
+
+        return back()->with('success', "Kategori tiket #{$aduan->kode_tiket} berhasil dikoreksi menjadi '{$kategoriBaru}'.");
     }
 
     /**
@@ -157,7 +213,7 @@ class DashboardController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => "Status tiket #{$aduan->kode_tiket} berhasil diperbarui menjadi {$aduan->status}.",
-                'data' => $aduan->fresh()->load('dinas'),
+                'data' => $aduan->fresh()->load(['dinas', 'koreksiHistori']),
             ]);
         }
 

@@ -112,21 +112,24 @@ Referensi: `prd.md` (v2.0), `styleguide.md`
 - [x] Tambah filter dashboard: tombol pill `⚠️ Perlu Review` (memudahkan staf fokus ke aduan ambigu)
 - [x] Test end-to-end: pengujian otomatis `DualLayerNlpClassificationTest.php` (5 test cases passed)
 
-## Fase 10 — Panel Admin (Prioritas Rendah / Could-have)
+## Fase 10 — Panel Admin (Koreksi Kategori, Histori & Manajemen Dinas)
 
-- [ ] Halaman admin untuk koreksi manual kategori tiket
-- [ ] Simpan histori koreksi (untuk data training model masa depan — Fase 3 roadmap PRD)
-- [ ] Halaman statistik agregat (jumlah aduan per kategori/wilayah/waktu) — bisa pakai chart sederhana (Chart.js/ApexCharts)
-- [ ] Manajemen mapping kategori → dinas (CRUD, bukan hardcode)
+- [x] Halaman/modal admin untuk koreksi manual kategori tiket & auto-reroute dinas
+- [x] Simpan histori koreksi `koreksi_kategoris` (fondasi Active Learning & audit trail)
+- [x] Halaman statistik agregat analitik & performa AI (`Pages/Admin/Statistik.vue`)
+- [x] Manajemen dinamis mapping kategori → dinas CRUD (`Pages/Admin/KategoriMapping.vue`)
+- [x] Fitur ekspor dataset aduan & histori koreksi berformat CSV untuk retraining model NLP
+
 
 ## Fase 11 — Testing & QA
 
-- [ ] Unit test: `GeminiClassificationService`, routing logic, geocoding service
-- [ ] Feature test: submit form aduan end-to-end (dengan mock Gemini API)
-- [ ] Test responsivitas manual: 375px, 768px, 1024px, 1280px (sesuai breakpoint `styleguide.md`)
-- [ ] Uji prompt Gemini dengan variasi teks aduan asli (bahasa informal, typo, singkatan) — evaluasi akurasi kategori & urgensi
-- [ ] Uji beban: simulasikan banyak submission bersamaan, cek rate limit Gemini/Nominatim tidak membuat sistem down
-- [ ] Aksesibilitas: cek kontras warna, ukuran target sentuh tombol (≥44px)
+- [x] Unit test: `GeminiClassificationService`, `RoutingLogicTest`, `GeocodeServiceTest`, `PromptSanitizerTest`
+- [x] Feature test: submit form aduan end-to-end (dengan mock Gemini API & dual-layer model)
+- [x] Uji variasi teks aduan asli (bahasa Sunda, bahasa informal, typo, singkatan) — `InformalTextAccuracyTest.php`
+- [x] Uji beban & ketahanan: cache hit resilience, fallback otomatis saat API LLM offline — `LoadAndRateLimitTest.php`
+- [x] Python ML Pipeline Unit Tests: text preprocessing, vectorization, dan model prediction — `nlp-model/test_nlp.py`
+- [x] Aksesibilitas & Responsivitas: verifikasi breakpoint 375px–1280px & kontras styleguide
+
 
 ## Fase 12 — Deployment & Monitoring
 

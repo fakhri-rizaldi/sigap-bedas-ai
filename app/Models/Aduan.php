@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Aduan extends Model
 {
@@ -84,6 +85,14 @@ class Aduan extends Model
     public function dinas(): BelongsTo
     {
         return $this->belongsTo(Dinas::class, 'dinas_id');
+    }
+
+    /**
+     * Relasi ke histori koreksi kategori manual.
+     */
+    public function koreksiHistori(): HasMany
+    {
+        return $this->hasMany(KoreksiKategori::class, 'aduan_id')->with(['user:id,name,email', 'dinasLama', 'dinasBaru'])->latest();
     }
 
     /**

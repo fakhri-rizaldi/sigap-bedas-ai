@@ -39,6 +39,16 @@ export interface AduanItem {
   perlu_review?: boolean;
   kategori_model_lokal?: string | null;
   confidence_model_lokal?: number | null;
+  koreksi_histori?: Array<{
+    id: number;
+    kategori_lama: string;
+    kategori_baru: string;
+    alasan_koreksi: string | null;
+    created_at: string;
+    user?: { id: number; name: string } | null;
+    dinas_lama?: { id: number; nama_dinas: string; kode_dinas: string } | null;
+    dinas_baru?: { id: number; nama_dinas: string; kode_dinas: string } | null;
+  }>;
   created_at: string;
   updated_at?: string;
   isNew?: boolean;

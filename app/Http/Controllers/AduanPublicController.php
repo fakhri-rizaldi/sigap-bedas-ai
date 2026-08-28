@@ -52,7 +52,17 @@ class AduanPublicController extends Controller
             'latitude' => ['required', 'numeric', 'between:-7.3500,-6.7800'],
             'longitude' => ['required', 'numeric', 'between:107.2500,107.9500'],
             'alamat' => ['required', 'string', 'min:5', 'max:500'],
-            'foto' => ['nullable'],
+            'foto' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value instanceof \Illuminate\Http\UploadedFile) {
+                    $ext = strtolower($value->getClientOriginalExtension());
+                    if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                        $fail('Berkas foto harus berformat JPG, JPEG, PNG, atau WEBP.');
+                    }
+                    if ($value->getSize() > 10 * 1024 * 1024) {
+                        $fail('Ukuran berkas foto maksimal 10MB.');
+                    }
+                }
+            }],
             'nama_pelapor' => ['nullable', 'string', 'max:100'],
             'kontak_pelapor' => ['nullable', 'string', 'max:50'],
             'email_pelapor' => ['nullable', 'email', 'max:100'],
